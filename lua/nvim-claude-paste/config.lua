@@ -2,15 +2,15 @@ local M = {}
 
 M.defaults = {
   keymaps = {
-    add_ref = "<leader>ca",
-    add_ref_visual = "<leader>ca",
-    add_ref_treesitter = "<leader>cf",
-    add_git_diff = "<leader>cg",
-    add_diagnostics = "<leader>cx",
-    list_refs = "<leader>cl",
-    send_refs = "<leader>cs",
-    clear_refs = "<leader>cd",
-    toggle_auto_refresh = "<leader>cr",
+    add_ref = "<leader>aa",
+    add_ref_visual = "<leader>aa",
+    add_ref_treesitter = "<leader>af",
+    add_git_diff = "<leader>ag",
+    add_diagnostics = "<leader>ax",
+    list_refs = "<leader>al",
+    send_refs = "<leader>as",
+    clear_refs = "<leader>ad",
+    toggle_auto_refresh = "<leader>ar",
   },
 
   auto_refresh = {

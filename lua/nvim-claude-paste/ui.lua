@@ -106,7 +106,7 @@ function M.send_refs()
     focusable = true,
     border = {
       style = "rounded",
-      text = { top = " Edit & Send to Claude (<C-CR> submit, <C-s> paste, q cancel) ", top_align = "center" },
+      text = { top = " Edit & Send to Claude (<CR> submit, <C-s> paste, q cancel) ", top_align = "center" },
     },
     position = "50%",
     size = { width = "80%", height = "60%" },
@@ -132,8 +132,8 @@ function M.send_refs()
     end)
   end
 
-  -- <C-CR> to paste and submit (send Enter)
-  popup:map("n", "<C-CR>", function() send(true) end)
+  -- <CR> to paste and submit (send Enter)
+  popup:map("n", "<CR>", function() send(true) end)
   -- <C-s> to paste only (no Enter)
   popup:map("n", "<C-s>", function() send(false) end)
 
