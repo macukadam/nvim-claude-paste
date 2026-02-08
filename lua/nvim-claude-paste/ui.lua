@@ -98,45 +98,48 @@ function M.send_refs()
     return
   end
 
-  local text = refs_mod.format_refs_for_send()
-  local ref_count = #refs
+  -- Pick pane first so we can make paths relative to its CWD
+  tmux.pick_pane(function(pane)
+    local text = refs_mod.format_refs_for_send(pane.path)
+    local ref_count = #refs
 
-  local popup = Popup({
-    enter = true,
-    focusable = true,
-    border = {
-      style = "rounded",
-      text = { top = " Edit & Send to Claude (<CR> submit, <C-s> paste, q cancel) ", top_align = "center" },
-    },
-    position = "50%",
-    size = { width = "80%", height = "60%" },
-  })
+    local popup = Popup({
+      enter = true,
+      focusable = true,
+      border = {
+        style = "rounded",
+        text = { top = " Send to " .. pane.label .. " (<CR> submit, <C-s> paste, q cancel) ", top_align = "center" },
+      },
+      position = "50%",
+      size = { width = "80%", height = "60%" },
+    })
 
-  popup:mount()
+    popup:mount()
 
-  local lines = vim.split(text, "\n")
-  vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
-  vim.bo[popup.bufnr].filetype = "markdown"
-  vim.bo[popup.bufnr].modifiable = true
+    local lines = vim.split(text, "\n")
+    vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
+    vim.bo[popup.bufnr].filetype = "markdown"
+    vim.bo[popup.bufnr].modifiable = true
 
-  local function send(submit)
-    local buf_lines = vim.api.nvim_buf_get_lines(popup.bufnr, 0, -1, false)
-    local edited_text = table.concat(buf_lines, "\n")
-    popup:unmount()
-    tmux.pick_pane_and_send(edited_text, ref_count, submit, function()
+    local function send(submit)
+      local buf_lines = vim.api.nvim_buf_get_lines(popup.bufnr, 0, -1, false)
+      local edited_text = table.concat(buf_lines, "\n")
+      popup:unmount()
+      tmux.send_to_pane(pane.id, edited_text, submit)
       refs_mod.clear()
       local cfg = config.get()
       if cfg.auto_refresh.enabled and not refresh.is_running() then
         refresh.start()
       end
-    end)
-  end
+      vim.notify("Sent " .. ref_count .. " refs to " .. pane.label .. " (cleared)", vim.log.levels.INFO)
+    end
 
-  -- Set mappings after filetype to override any ftplugin <CR> mappings
-  vim.schedule(function()
-    popup:map("n", "<CR>", function() send(true) end)
-    popup:map("n", "<C-s>", function() send(false) end)
-    popup:map("n", "q", function() popup:unmount() end)
+    -- Set mappings after filetype to override any ftplugin <CR> mappings
+    vim.schedule(function()
+      popup:map("n", "<CR>", function() send(true) end)
+      popup:map("n", "<C-s>", function() send(false) end)
+      popup:map("n", "q", function() popup:unmount() end)
+    end)
   end)
 end
 

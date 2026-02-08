@@ -202,9 +202,21 @@ function M.add_diagnostic_refs()
   vim.notify("Added " .. #diagnostics .. " diagnostic" .. (#diagnostics == 1 and "" or "s") .. " as refs", vim.log.levels.INFO)
 end
 
+-- Make filepath relative to base directory; falls back to absolute if not under base
+local function relative_to(filepath, base)
+  if not base or base == "" then
+    return vim.fn.fnamemodify(filepath, ":~:.")
+  end
+  local prefix = base:gsub("/$", "") .. "/"
+  if filepath:sub(1, #prefix) == prefix then
+    return filepath:sub(#prefix + 1)
+  end
+  return filepath
+end
+
 -- Format a ref for display in the list viewer
-function M.format_ref_short(i, ref)
-  local rel = vim.fn.fnamemodify(ref.file, ":~:.")
+function M.format_ref_short(i, ref, base_path)
+  local rel = relative_to(ref.file, base_path)
   if ref.start_line == 0 then
     local comment_part = ref.comment and (" — " .. ref.comment) or ""
     return string.format("[%d] %s%s", i, rel, comment_part)
@@ -217,10 +229,10 @@ function M.format_ref_short(i, ref)
 end
 
 -- Format all refs for sending to Claude
-function M.format_refs_for_send()
+function M.format_refs_for_send(base_path)
   local parts = {}
   for _, ref in ipairs(refs) do
-    local rel = vim.fn.fnamemodify(ref.file, ":~:.")
+    local rel = relative_to(ref.file, base_path)
     local loc
     if ref.start_line == 0 then
       loc = rel

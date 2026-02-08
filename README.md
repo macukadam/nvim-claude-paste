@@ -11,7 +11,7 @@ Collect code references from Neovim and send them to a running [Claude Code](htt
 - **Editable preview** — review and edit the payload before sending
 - **Pane picker** — auto-detects Claude Code tmux panes; picks the closest match by CWD
 - **Auto-refresh** — periodically runs `:checktime` so buffers reload after Claude edits files
-- **Fully configurable** keymaps (set any to `false` to disable)
+- **Fully configurable** keymaps (override or set to `false` to disable)
 
 ## How it works
 
@@ -93,7 +93,7 @@ All options with their defaults:
 ```lua
 require("nvim-claude-paste").setup({
   keymaps = {
-    add_ref = "<leader>aa",            -- set to false to disable
+    add_ref = "<leader>aa",
     add_ref_visual = "<leader>aa",
     add_ref_treesitter = "<leader>af",
     add_git_diff = "<leader>ag",
@@ -110,15 +110,16 @@ require("nvim-claude-paste").setup({
 })
 ```
 
-### Disabling specific keymaps
+### Overriding keymaps
 
-Set any keymap to `false` to prevent it from being registered:
+Pass your own bindings to override the defaults. Set any keymap to `false` to disable it:
 
 ```lua
 require("nvim-claude-paste").setup({
   keymaps = {
-    add_ref_treesitter = false,  -- don't bind <leader>af
-    toggle_auto_refresh = false, -- don't bind <leader>ar
+    add_ref = "<leader>ca",              -- override default
+    send_refs = "<leader>cs",            -- override default
+    add_ref_treesitter = false,          -- disable
   },
 })
 ```

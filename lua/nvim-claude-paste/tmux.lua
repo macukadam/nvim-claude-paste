@@ -34,7 +34,7 @@ function M.send_to_pane(pane_id, text, submit)
   os.remove(tmpfile)
 end
 
-function M.pick_pane_and_send(text, ref_count, submit, on_sent)
+function M.pick_pane(callback)
   local panes = M.get_claude_panes()
   if #panes == 0 then
     vim.notify("No Claude instances found in tmux", vim.log.levels.ERROR)
@@ -42,9 +42,7 @@ function M.pick_pane_and_send(text, ref_count, submit, on_sent)
   end
 
   if #panes == 1 then
-    M.send_to_pane(panes[1].id, text, submit)
-    if on_sent then on_sent() end
-    vim.notify("Sent " .. ref_count .. " refs to " .. panes[1].label .. " (cleared)", vim.log.levels.INFO)
+    callback(panes[1])
     return
   end
 
@@ -84,9 +82,7 @@ function M.pick_pane_and_send(text, ref_count, submit, on_sent)
       submit = { "<CR>" },
     },
     on_submit = function(item)
-      M.send_to_pane(item.pane.id, text, submit)
-      if on_sent then on_sent() end
-      vim.notify("Sent " .. ref_count .. " refs to " .. item.pane.label .. " (cleared)", vim.log.levels.INFO)
+      callback(item.pane)
     end,
   })
 
