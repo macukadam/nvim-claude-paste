@@ -106,7 +106,7 @@ function M.send_refs()
     focusable = true,
     border = {
       style = "rounded",
-      text = { top = " Edit & Send to Claude (<C-s> send, q cancel) ", top_align = "center" },
+      text = { top = " Edit & Send to Claude (<C-CR> submit, <C-s> paste, q cancel) ", top_align = "center" },
     },
     position = "50%",
     size = { width = "80%", height = "60%" },
@@ -119,18 +119,23 @@ function M.send_refs()
   vim.bo[popup.bufnr].modifiable = true
   vim.bo[popup.bufnr].filetype = "markdown"
 
-  popup:map("n", "<C-s>", function()
+  local function send(submit)
     local buf_lines = vim.api.nvim_buf_get_lines(popup.bufnr, 0, -1, false)
     local edited_text = table.concat(buf_lines, "\n")
     popup:unmount()
-    tmux.pick_pane_and_send(edited_text, ref_count, function()
+    tmux.pick_pane_and_send(edited_text, ref_count, submit, function()
       refs_mod.clear()
       local cfg = config.get()
       if cfg.auto_refresh.enabled and not refresh.is_running() then
         refresh.start()
       end
     end)
-  end)
+  end
+
+  -- <C-CR> to paste and submit (send Enter)
+  popup:map("n", "<C-CR>", function() send(true) end)
+  -- <C-s> to paste only (no Enter)
+  popup:map("n", "<C-s>", function() send(false) end)
 
   popup:map("n", "q", function() popup:unmount() end)
   popup:map("n", "<Esc>", function() popup:unmount() end)

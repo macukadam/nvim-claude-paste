@@ -17,9 +17,19 @@ Collect code references from Neovim and send them to a running [Claude Code](htt
 
 1. You accumulate code references while navigating your codebase — lines, visual selections, treesitter nodes, diff hunks, or diagnostics.
 2. When ready, `<leader>cs` opens an editable preview of the formatted payload.
-3. On confirm (`<C-s>`), the plugin writes the text to a temp file, loads it into a tmux buffer, and pastes it into the selected Claude Code pane.
-4. If `auto_submit` is enabled (default), an `Enter` keystroke is sent after the paste so Claude starts processing immediately.
+3. Press `<C-CR>` to paste and submit (sends Enter), or `<C-s>` to paste only (lets you append more before submitting).
+4. The plugin writes the text to a temp file, loads it into a tmux buffer, and pastes it into the selected Claude Code pane.
 5. After sending, the auto-refresh timer starts (if enabled), periodically calling `:checktime` to pick up file changes Claude makes.
+
+> **Tip:** For best results, enable `autoread` and add `checktime` autocmds so buffers reload on focus/buffer switch — not just on the refresh timer:
+>
+> ```lua
+> vim.o.autoread = true
+> vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "CursorHoldI", "FocusGained" }, {
+>   command = "if mode() != 'c' | checktime | endif",
+>   pattern = "*",
+> })
+> ```
 
 ## Requirements
 
@@ -70,10 +80,11 @@ Collect code references from Neovim and send them to a running [Claude Code](htt
 
 ### Send preview popup keys
 
-| Key      | Action       |
-|----------|--------------|
-| `<C-s>`  | Send to pane |
-| `q`      | Cancel       |
+| Key      | Action                            |
+|----------|-----------------------------------|
+| `<C-CR>` | Paste and submit (sends Enter)    |
+| `<C-s>`  | Paste only (no Enter)             |
+| `q`      | Cancel                            |
 
 ## Configuration
 
@@ -92,7 +103,6 @@ require("nvim-claude-paste").setup({
     clear_refs = "<leader>cd",
     toggle_auto_refresh = "<leader>cr",
   },
-  auto_submit = true,       -- send Enter after pasting to tmux
   auto_refresh = {
     enabled = true,          -- auto-start refresh timer on send
     interval_ms = 2000,      -- checktime interval in milliseconds
@@ -110,16 +120,6 @@ require("nvim-claude-paste").setup({
     add_ref_treesitter = false,  -- don't bind <leader>cf
     toggle_auto_refresh = false, -- don't bind <leader>cr
   },
-})
-```
-
-### Disabling auto-submit
-
-By default the plugin sends `Enter` after pasting into the tmux pane so Claude starts processing immediately. To paste without submitting:
-
-```lua
-require("nvim-claude-paste").setup({
-  auto_submit = false,
 })
 ```
 

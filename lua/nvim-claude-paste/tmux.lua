@@ -1,5 +1,3 @@
-local config = require("nvim-claude-paste.config")
-
 local M = {}
 
 function M.get_claude_panes()
@@ -18,7 +16,7 @@ function M.get_claude_panes()
   return panes
 end
 
-function M.send_to_pane(pane_id, text)
+function M.send_to_pane(pane_id, text, submit)
   local tmpfile = os.tmpname()
   local f = io.open(tmpfile, "w")
   if not f then
@@ -28,16 +26,15 @@ function M.send_to_pane(pane_id, text)
   f:write(text)
   f:close()
 
-  local cfg = config.get()
   local cmd = string.format("tmux load-buffer %s && tmux paste-buffer -t %s", tmpfile, pane_id)
-  if cfg.auto_submit then
+  if submit then
     cmd = cmd .. string.format(" && tmux send-keys -t %s Enter", pane_id)
   end
   vim.fn.system(cmd)
   os.remove(tmpfile)
 end
 
-function M.pick_pane_and_send(text, ref_count, on_sent)
+function M.pick_pane_and_send(text, ref_count, submit, on_sent)
   local panes = M.get_claude_panes()
   if #panes == 0 then
     vim.notify("No Claude instances found in tmux", vim.log.levels.ERROR)
@@ -45,7 +42,7 @@ function M.pick_pane_and_send(text, ref_count, on_sent)
   end
 
   if #panes == 1 then
-    M.send_to_pane(panes[1].id, text)
+    M.send_to_pane(panes[1].id, text, submit)
     if on_sent then on_sent() end
     vim.notify("Sent " .. ref_count .. " refs to " .. panes[1].label .. " (cleared)", vim.log.levels.INFO)
     return
@@ -87,7 +84,7 @@ function M.pick_pane_and_send(text, ref_count, on_sent)
       submit = { "<CR>" },
     },
     on_submit = function(item)
-      M.send_to_pane(item.pane.id, text)
+      M.send_to_pane(item.pane.id, text, submit)
       if on_sent then on_sent() end
       vim.notify("Sent " .. ref_count .. " refs to " .. item.pane.label .. " (cleared)", vim.log.levels.INFO)
     end,

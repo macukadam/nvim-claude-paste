@@ -12,7 +12,7 @@ M.defaults = {
     clear_refs = "<leader>cd",
     toggle_auto_refresh = "<leader>cr",
   },
-  auto_submit = true,
+
   auto_refresh = {
     enabled = true,
     interval_ms = 2000,
