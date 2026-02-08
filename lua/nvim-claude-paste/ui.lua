@@ -116,8 +116,8 @@ function M.send_refs()
 
   local lines = vim.split(text, "\n")
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
-  vim.bo[popup.bufnr].modifiable = true
   vim.bo[popup.bufnr].filetype = "markdown"
+  vim.bo[popup.bufnr].modifiable = true
 
   local function send(submit)
     local buf_lines = vim.api.nvim_buf_get_lines(popup.bufnr, 0, -1, false)
@@ -132,13 +132,12 @@ function M.send_refs()
     end)
   end
 
-  -- <CR> to paste and submit (send Enter)
-  popup:map("n", "<CR>", function() send(true) end)
-  -- <C-s> to paste only (no Enter)
-  popup:map("n", "<C-s>", function() send(false) end)
-
-  popup:map("n", "q", function() popup:unmount() end)
-  popup:map("n", "<Esc>", function() popup:unmount() end)
+  -- Set mappings after filetype to override any ftplugin <CR> mappings
+  vim.schedule(function()
+    popup:map("n", "<CR>", function() send(true) end)
+    popup:map("n", "<C-s>", function() send(false) end)
+    popup:map("n", "q", function() popup:unmount() end)
+  end)
 end
 
 return M

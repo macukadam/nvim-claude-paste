@@ -39,12 +39,8 @@ function M.add_ref(visual)
       if not entry then return end
       file = oil_dir .. entry.name
       ref = { file = file, start_line = 0, end_line = 0 }
-      vim.ui.input({ prompt = "Comment (optional): " }, function(comment)
-        if comment == nil then return end
-        ref.comment = comment ~= "" and comment or nil
-        M.add(ref)
-        vim.notify("Added ref #" .. #refs, vim.log.levels.INFO)
-      end)
+      M.add(ref)
+      vim.notify("Added ref #" .. #refs, vim.log.levels.INFO)
       return
     end
   end
@@ -64,12 +60,8 @@ function M.add_ref(visual)
     ref.end_line = ref.start_line
   end
 
-  vim.ui.input({ prompt = "Comment (optional): " }, function(comment)
-    if comment == nil then return end
-    ref.comment = comment ~= "" and comment or nil
-    M.add(ref)
-    vim.notify("Added ref #" .. #refs, vim.log.levels.INFO)
-  end)
+  M.add(ref)
+  vim.notify("Added ref #" .. #refs, vim.log.levels.INFO)
 end
 
 -- Add a reference for the enclosing treesitter node (function/class/method)
@@ -121,12 +113,8 @@ function M.add_ref_treesitter()
     code = table.concat(lines, "\n"),
   }
 
-  vim.ui.input({ prompt = "Comment (optional): " }, function(comment)
-    if comment == nil then return end
-    ref.comment = comment ~= "" and comment or nil
-    M.add(ref)
-    vim.notify("Added ref #" .. #refs .. " (" .. target:type() .. ")", vim.log.levels.INFO)
-  end)
+  M.add(ref)
+  vim.notify("Added ref #" .. #refs .. " (" .. target:type() .. ")", vim.log.levels.INFO)
 end
 
 -- Add all git diff hunks as refs
