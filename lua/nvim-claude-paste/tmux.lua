@@ -27,11 +27,11 @@ function M.send_to_pane(pane_id, text, submit)
   f:close()
 
   local cmd = string.format("tmux load-buffer %s && tmux paste-buffer -t %s", vim.fn.shellescape(tmpfile), vim.fn.shellescape(pane_id))
-  if submit then
-    cmd = cmd .. string.format(" && tmux send-keys -t %s Enter", vim.fn.shellescape(pane_id))
-  end
   vim.fn.system(cmd)
   os.remove(tmpfile)
+  if submit then
+    vim.fn.system(string.format("sleep 0.2 && tmux send-keys -t %s Enter", vim.fn.shellescape(pane_id)))
+  end
   if vim.v.shell_error ~= 0 then
     vim.notify("Failed to send to tmux pane (it may have been closed)", vim.log.levels.ERROR)
   end
