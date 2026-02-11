@@ -67,22 +67,28 @@ function M.start_claude(opts)
   end
 end
 
+function M.ensure_claude_running()
+  local panes = M.get_claude_panes()
+  if #panes > 0 then return end
+  vim.ui.select({
+    "Start Claude Code",
+    "Start Claude Code (--dangerously-skip-permissions)",
+    "Cancel",
+  }, {
+    prompt = "No Claude instances found in tmux",
+  }, function(choice)
+    if choice == "Start Claude Code" then
+      M.start_claude()
+    elseif choice and choice:match("dangerously") then
+      M.start_claude({ dangerous = true })
+    end
+  end)
+end
+
 function M.pick_pane(callback)
   local panes = M.get_claude_panes()
   if #panes == 0 then
-    vim.ui.select({
-      "Start Claude Code",
-      "Start Claude Code (--dangerously-skip-permissions)",
-      "Cancel",
-    }, {
-      prompt = "No Claude instances found in tmux",
-    }, function(choice)
-      if choice == "Start Claude Code" then
-        M.start_claude()
-      elseif choice and choice:match("dangerously") then
-        M.start_claude({ dangerous = true })
-      end
-    end)
+    M.ensure_claude_running()
     return
   end
 

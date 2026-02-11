@@ -1,6 +1,7 @@
 local M = {}
 
 local refs = {}
+local tmux -- lazy-loaded to avoid circular deps
 
 function M.get()
   return refs
@@ -14,6 +15,8 @@ end
 
 function M.add(ref)
   table.insert(refs, ref)
+  if not tmux then tmux = require("nvim-claude-paste.tmux") end
+  tmux.ensure_claude_running()
   return #refs
 end
 
