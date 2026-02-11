@@ -11,6 +11,8 @@ M.defaults = {
     send_refs = "<leader>as",
     clear_refs = "<leader>ad",
     toggle_auto_refresh = "<leader>ar",
+    start_claude = "<leader>ac",
+    start_claude_dangerous = "<leader>a!",
   },
 
   auto_refresh = {

@@ -24,6 +24,8 @@ M.stop_auto_refresh = refresh.stop
 M.toggle_auto_refresh = refresh.toggle
 
 M.get_claude_panes = tmux.get_claude_panes
+M.start_claude = function() tmux.start_claude() end
+M.start_claude_dangerous = function() tmux.start_claude({ dangerous = true }) end
 
 function M.setup(opts)
   config.setup(opts)
@@ -38,6 +40,8 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("ClaudeDiff", M.add_git_diff_refs, {})
   vim.api.nvim_create_user_command("ClaudeDiagnostics", M.add_diagnostic_refs, {})
   vim.api.nvim_create_user_command("ClaudeWatch", function() M.toggle_auto_refresh() end, {})
+  vim.api.nvim_create_user_command("ClaudeStart", M.start_claude, {})
+  vim.api.nvim_create_user_command("ClaudeStartDangerous", M.start_claude_dangerous, {})
 
   -- Keymaps
   local km = cfg.keymaps
@@ -72,6 +76,12 @@ function M.setup(opts)
   end
   if km.toggle_auto_refresh then
     vim.keymap.set("n", km.toggle_auto_refresh, function() M.toggle_auto_refresh() end, vim.tbl_extend("force", map_opts, { desc = "Toggle Claude auto-refresh" }))
+  end
+  if km.start_claude then
+    vim.keymap.set("n", km.start_claude, M.start_claude, vim.tbl_extend("force", map_opts, { desc = "Start Claude Code" }))
+  end
+  if km.start_claude_dangerous then
+    vim.keymap.set("n", km.start_claude_dangerous, M.start_claude_dangerous, vim.tbl_extend("force", map_opts, { desc = "Start Claude Code (dangerous)" }))
   end
 end
 

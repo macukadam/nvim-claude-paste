@@ -34,10 +34,52 @@ function M.send_to_pane(pane_id, text, submit)
   os.remove(tmpfile)
 end
 
+function M.start_claude(opts)
+  opts = opts or {}
+  local cwd = vim.fn.getcwd()
+
+  local function launch(dangerous)
+    local cmd = "claude"
+    if dangerous then
+      cmd = "claude --dangerously-skip-permissions"
+    end
+    vim.fn.system(string.format("tmux split-window -d -h -c %s %s", vim.fn.shellescape(cwd), cmd))
+    if vim.v.shell_error ~= 0 then
+      vim.notify("Failed to start Claude (are you in tmux?)", vim.log.levels.ERROR)
+    else
+      vim.notify("Claude is starting. Retry in a few seconds.", vim.log.levels.INFO)
+    end
+  end
+
+  if opts.dangerous then
+    vim.ui.select({ "Yes, start with --dangerously-skip-permissions", "Cancel" }, {
+      prompt = "WARNING: This skips all permission prompts. Claude will execute commands without confirmation. Continue?",
+    }, function(choice)
+      if choice and choice:match("^Yes") then
+        launch(true)
+      end
+    end)
+  else
+    launch(false)
+  end
+end
+
 function M.pick_pane(callback)
   local panes = M.get_claude_panes()
   if #panes == 0 then
-    vim.notify("No Claude instances found in tmux", vim.log.levels.ERROR)
+    vim.ui.select({
+      "Start Claude Code",
+      "Start Claude Code (--dangerously-skip-permissions)",
+      "Cancel",
+    }, {
+      prompt = "No Claude instances found in tmux",
+    }, function(choice)
+      if choice == "Start Claude Code" then
+        M.start_claude()
+      elseif choice and choice:match("dangerously") then
+        M.start_claude({ dangerous = true })
+      end
+    end)
     return
   end
 
