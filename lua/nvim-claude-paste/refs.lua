@@ -37,7 +37,7 @@ function M.add_ref(visual)
     if oil_dir then
       local entry = oil.get_cursor_entry()
       if not entry then return end
-      file = oil_dir .. entry.name
+      file = vim.fs.joinpath(oil_dir, entry.name)
       ref = { file = file, start_line = 0, end_line = 0 }
       M.add(ref)
       vim.notify("Added ref #" .. #refs, vim.log.levels.INFO)
