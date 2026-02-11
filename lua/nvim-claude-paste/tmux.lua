@@ -1,8 +1,5 @@
 local M = {}
 
-local _recently_started = {} -- pane_id -> true
-local _starting = false -- prevents repeated prompts during rapid ref adds
-
 function M.get_claude_panes()
   local handle = io.popen("tmux list-panes -a -F '#{pane_id} #{pane_current_command} #{pane_current_path}' 2>/dev/null")
   if not handle then return {} end
@@ -20,54 +17,23 @@ function M.get_claude_panes()
 end
 
 function M.send_to_pane(pane_id, text, submit)
-  local function do_send()
-    local tmpfile = vim.fn.tempname()
-    local f = io.open(tmpfile, "w")
-    if not f then
-      vim.notify("Failed to create temp file", vim.log.levels.ERROR)
-      return
-    end
-    f:write(text)
-    f:close()
-
-    local cmd = string.format("tmux load-buffer %s && tmux paste-buffer -t %s", vim.fn.shellescape(tmpfile), vim.fn.shellescape(pane_id))
-    if submit then
-      cmd = cmd .. string.format(" && tmux send-keys -t %s Enter", vim.fn.shellescape(pane_id))
-    end
-    vim.fn.system(cmd)
-    os.remove(tmpfile)
-    if vim.v.shell_error ~= 0 then
-      vim.notify("Failed to send to tmux pane (it may have been closed)", vim.log.levels.ERROR)
-    end
+  local tmpfile = vim.fn.tempname()
+  local f = io.open(tmpfile, "w")
+  if not f then
+    vim.notify("Failed to create temp file", vim.log.levels.ERROR)
+    return
   end
+  f:write(text)
+  f:close()
 
-  if _recently_started[pane_id] then
-    _recently_started[pane_id] = nil
-    vim.notify("Waiting for Claude to initialize...", vim.log.levels.INFO)
-    local attempts = 0
-    local max_attempts = 30 -- 30 * 500ms = 15s max
-    local timer = vim.uv.new_timer()
-    timer:start(500, 500, vim.schedule_wrap(function()
-      attempts = attempts + 1
-      local handle = io.popen(string.format("tmux capture-pane -p -t %s 2>/dev/null", vim.fn.shellescape(pane_id)))
-      if handle then
-        local content = handle:read("*a")
-        handle:close()
-        if (content and content:match("%S")) or attempts >= max_attempts then
-          timer:stop()
-          timer:close()
-          vim.defer_fn(do_send, 500)
-          return
-        end
-      elseif attempts >= max_attempts then
-        timer:stop()
-        timer:close()
-        do_send()
-        return
-      end
-    end))
-  else
-    do_send()
+  local cmd = string.format("tmux load-buffer %s && tmux paste-buffer -t %s", vim.fn.shellescape(tmpfile), vim.fn.shellescape(pane_id))
+  if submit then
+    cmd = cmd .. string.format(" && tmux send-keys -t %s Enter", vim.fn.shellescape(pane_id))
+  end
+  vim.fn.system(cmd)
+  os.remove(tmpfile)
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Failed to send to tmux pane (it may have been closed)", vim.log.levels.ERROR)
   end
 end
 
@@ -80,18 +46,11 @@ function M.start_claude(opts)
     if dangerous then
       cmd = "claude --dangerously-skip-permissions"
     end
-    local result = vim.fn.system(string.format(
-      "tmux split-window -d -h -P -F '#{pane_id}' -c %s %s",
-      vim.fn.shellescape(cwd), cmd
-    ))
+    vim.fn.system(string.format("tmux split-window -d -h -c %s %s", vim.fn.shellescape(cwd), cmd))
     if vim.v.shell_error ~= 0 then
       vim.notify("Failed to start Claude (are you in tmux?)", vim.log.levels.ERROR)
     else
-      local pane_id = vim.trim(result)
-      if pane_id ~= "" then
-        _recently_started[pane_id] = true
-      end
-      vim.notify("Claude is starting...", vim.log.levels.INFO)
+      vim.notify("Claude is starting. Retry in a few seconds.", vim.log.levels.INFO)
     end
   end
 
@@ -109,13 +68,8 @@ function M.start_claude(opts)
 end
 
 function M.ensure_claude_running()
-  if _starting then return end
   local panes = M.get_claude_panes()
-  if #panes > 0 then
-    _starting = false
-    return
-  end
-  _starting = true
+  if #panes > 0 then return end
   vim.ui.select({
     "Start Claude Code",
     "Start Claude Code (--dangerously-skip-permissions)",
@@ -127,8 +81,6 @@ function M.ensure_claude_running()
       M.start_claude()
     elseif choice and choice:match("dangerously") then
       M.start_claude({ dangerous = true })
-    else
-      _starting = false
     end
   end)
 end
