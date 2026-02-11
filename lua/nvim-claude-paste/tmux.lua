@@ -17,7 +17,7 @@ function M.get_claude_panes()
 end
 
 function M.send_to_pane(pane_id, text, submit)
-  local tmpfile = os.tmpname()
+  local tmpfile = vim.fn.tempname()
   local f = io.open(tmpfile, "w")
   if not f then
     vim.notify("Failed to create temp file", vim.log.levels.ERROR)
@@ -26,12 +26,15 @@ function M.send_to_pane(pane_id, text, submit)
   f:write(text)
   f:close()
 
-  local cmd = string.format("tmux load-buffer %s && tmux paste-buffer -t %s", tmpfile, pane_id)
+  local cmd = string.format("tmux load-buffer %s && tmux paste-buffer -t %s", vim.fn.shellescape(tmpfile), vim.fn.shellescape(pane_id))
   if submit then
-    cmd = cmd .. string.format(" && tmux send-keys -t %s Enter", pane_id)
+    cmd = cmd .. string.format(" && tmux send-keys -t %s Enter", vim.fn.shellescape(pane_id))
   end
   vim.fn.system(cmd)
   os.remove(tmpfile)
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Failed to send to tmux pane (it may have been closed)", vim.log.levels.ERROR)
+  end
 end
 
 function M.start_claude(opts)

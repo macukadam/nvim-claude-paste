@@ -70,8 +70,8 @@ function M.add_ref_treesitter()
   local cursor = vim.api.nvim_win_get_cursor(0)
   local row = cursor[1] - 1
 
-  local node = vim.treesitter.get_node({ pos = { row, cursor[2] } })
-  if not node then
+  local ts_ok, node = pcall(vim.treesitter.get_node, { pos = { row, cursor[2] } })
+  if not ts_ok or not node then
     vim.notify("No treesitter node at cursor", vim.log.levels.WARN)
     return
   end
