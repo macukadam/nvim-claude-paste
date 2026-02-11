@@ -10,6 +10,8 @@ local M = {}
 M.add_ref = refs.add_ref
 M.add_ref_treesitter = refs.add_ref_treesitter
 M.add_git_diff_refs = refs.add_git_diff_refs
+M.add_git_diff_staged = function() refs.add_git_diff_refs("staged") end
+M.add_git_diff_all = function() refs.add_git_diff_refs("all") end
 M.add_diagnostic_refs = refs.add_diagnostic_refs
 M.clear_refs = function()
   local count = refs.clear()
@@ -38,6 +40,8 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("ClaudeClear", M.clear_refs, {})
   vim.api.nvim_create_user_command("ClaudeTreesitter", M.add_ref_treesitter, {})
   vim.api.nvim_create_user_command("ClaudeDiff", M.add_git_diff_refs, {})
+  vim.api.nvim_create_user_command("ClaudeDiffStaged", M.add_git_diff_staged, {})
+  vim.api.nvim_create_user_command("ClaudeDiffAll", M.add_git_diff_all, {})
   vim.api.nvim_create_user_command("ClaudeDiagnostics", M.add_diagnostic_refs, {})
   vim.api.nvim_create_user_command("ClaudeWatch", function() M.toggle_auto_refresh() end, {})
   vim.api.nvim_create_user_command("ClaudeStart", M.start_claude, {})
@@ -61,6 +65,12 @@ function M.setup(opts)
   end
   if km.add_git_diff then
     vim.keymap.set("n", km.add_git_diff, M.add_git_diff_refs, vim.tbl_extend("force", map_opts, { desc = "Add git diff as Claude refs" }))
+  end
+  if km.add_git_diff_staged then
+    vim.keymap.set("n", km.add_git_diff_staged, M.add_git_diff_staged, vim.tbl_extend("force", map_opts, { desc = "Add staged git diff as Claude refs" }))
+  end
+  if km.add_git_diff_all then
+    vim.keymap.set("n", km.add_git_diff_all, M.add_git_diff_all, vim.tbl_extend("force", map_opts, { desc = "Add all git diff as Claude refs" }))
   end
   if km.add_diagnostics then
     vim.keymap.set("n", km.add_diagnostics, M.add_diagnostic_refs, vim.tbl_extend("force", map_opts, { desc = "Add diagnostics as Claude refs" }))

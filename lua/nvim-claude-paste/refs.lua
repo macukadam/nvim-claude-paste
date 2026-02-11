@@ -118,10 +118,20 @@ function M.add_ref_treesitter()
 end
 
 -- Add all git diff hunks as refs
-function M.add_git_diff_refs()
-  local diff = vim.fn.systemlist("git diff")
+-- mode: "unstaged" (default), "staged", or "all"
+function M.add_git_diff_refs(mode)
+  mode = mode or "unstaged"
+  local diff_cmd
+  if mode == "staged" then
+    diff_cmd = "git diff --cached"
+  elseif mode == "all" then
+    diff_cmd = "git diff HEAD"
+  else
+    diff_cmd = "git diff"
+  end
+  local diff = vim.fn.systemlist(diff_cmd)
   if vim.v.shell_error ~= 0 or #diff == 0 then
-    vim.notify("No git diff output", vim.log.levels.WARN)
+    vim.notify("No git diff output (" .. mode .. ")", vim.log.levels.WARN)
     return
   end
 
