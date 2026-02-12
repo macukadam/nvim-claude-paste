@@ -1,16 +1,47 @@
 local M = {}
 
+local function capture_pane_preview(pane_id)
+  local handle = io.popen(string.format("tmux capture-pane -t %s -p 2>/dev/null", pane_id))
+  if not handle then return nil end
+  local result = handle:read("*a")
+  handle:close()
+
+  -- Find the last non-empty line as a preview of current activity
+  local last_line = nil
+  for line in result:gmatch("[^\r\n]+") do
+    local trimmed = line:match("^%s*(.-)%s*$")
+    if trimmed ~= "" then
+      last_line = trimmed
+    end
+  end
+  return last_line
+end
+
 function M.get_claude_panes()
-  local handle = io.popen("tmux list-panes -a -F '#{pane_id} #{pane_current_command} #{pane_current_path}' 2>/dev/null")
+  local handle = io.popen("tmux list-panes -a -F '#{pane_id}\t#{pane_current_command}\t#{pane_current_path}\t#{session_name}\t#{window_index}\t#{pane_index}' 2>/dev/null")
   if not handle then return {} end
   local result = handle:read("*a")
   handle:close()
 
   local panes = {}
   for line in result:gmatch("[^\r\n]+") do
-    local pane_id, cmd, path = line:match("^(%S+)%s+(%S+)%s+(.+)$")
+    local pane_id, cmd, path, session, win_idx, pane_idx = line:match("^([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)$")
     if cmd == "claude" then
-      table.insert(panes, { id = pane_id, path = path, label = vim.fn.fnamemodify(path, ":t") })
+      local dir_name = vim.fn.fnamemodify(path, ":t")
+      local preview = capture_pane_preview(pane_id)
+      -- Truncate preview to keep menu readable
+      if preview and #preview > 60 then
+        preview = preview:sub(1, 57) .. "..."
+      end
+      table.insert(panes, {
+        id = pane_id,
+        path = path,
+        label = dir_name,
+        session = session,
+        window_index = win_idx,
+        pane_index = pane_idx,
+        preview = preview,
+      })
     end
   end
   return panes
@@ -113,13 +144,21 @@ function M.pick_pane(callback)
   end
 
   local items = {}
+  local max_width = 30
   for _, pane in ipairs(panes) do
-    table.insert(items, Menu.item(pane.label .. " (" .. pane.id .. ")", { pane = pane }))
+    -- Format: [session:window.pane] dir_name — preview
+    local location = string.format("[%s:%s.%s]", pane.session, pane.window_index, pane.pane_index)
+    local line = location .. " " .. pane.label
+    if pane.preview then
+      line = line .. " — " .. pane.preview
+    end
+    if #line > max_width then max_width = #line end
+    table.insert(items, Menu.item(line, { pane = pane }))
   end
 
   local menu = Menu({
     position = "50%",
-    size = { width = 50, height = math.min(#panes, 10) },
+    size = { width = math.min(max_width + 6, 90), height = math.min(#panes, 10) },
     border = {
       style = "rounded",
       text = { top = " Send to Claude ", top_align = "center" },

@@ -108,7 +108,10 @@ function M.send_refs()
       focusable = true,
       border = {
         style = "rounded",
-        text = { top = " Send to " .. pane.label .. " (<CR> submit, <C-s> paste, q cancel) ", top_align = "center" },
+        text = {
+          top = " Send to [" .. pane.session .. ":" .. pane.window_index .. "." .. pane.pane_index .. "] " .. pane.label .. " (<CR> submit, <C-s> paste, q cancel) ",
+          top_align = "center",
+        },
       },
       position = "50%",
       size = { width = "80%", height = "60%" },
@@ -131,7 +134,7 @@ function M.send_refs()
       if cfg.auto_refresh.enabled and not refresh.is_running() then
         refresh.start()
       end
-      vim.notify("Sent " .. ref_count .. " refs to " .. pane.label .. " (cleared)", vim.log.levels.INFO)
+      vim.notify("Sent " .. ref_count .. " refs to [" .. pane.session .. ":" .. pane.window_index .. "." .. pane.pane_index .. "] " .. pane.label .. " (cleared)", vim.log.levels.INFO)
     end
 
     -- Set mappings after filetype to override any ftplugin <CR> mappings
