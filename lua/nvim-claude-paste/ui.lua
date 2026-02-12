@@ -5,6 +5,25 @@ local refresh = require("nvim-claude-paste.refresh")
 
 local M = {}
 
+local active_popup = nil
+
+local function dismiss_active()
+  if active_popup then
+    pcall(function() active_popup:unmount() end)
+    active_popup = nil
+  end
+end
+
+tmux._set_dismiss(dismiss_active)
+
+local function track(popup)
+  dismiss_active()
+  active_popup = popup
+  popup:on(require("nui.utils.autocmd").event.BufLeave, function()
+    if active_popup == popup then active_popup = nil end
+  end)
+end
+
 function M.list_refs()
   local refs = refs_mod.get()
   if #refs == 0 then
@@ -17,12 +36,8 @@ function M.list_refs()
     vim.notify("nui.nvim is required for list_refs UI", vim.log.levels.ERROR)
     return
   end
-  local ok_event, autocmd = pcall(require, "nui.utils.autocmd")
-  if not ok_event then
-    vim.notify("nui.nvim is required for list_refs UI", vim.log.levels.ERROR)
-    return
-  end
-  local event = autocmd.event
+
+  dismiss_active()
 
   local lines = {}
   for i, ref in ipairs(refs) do
@@ -41,10 +56,9 @@ function M.list_refs()
   })
 
   popup:mount()
+  track(popup)
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
   vim.bo[popup.bufnr].modifiable = false
-
-  popup:on(event.BufLeave, function() popup:unmount() end)
 
   popup:map("n", "q", function() popup:unmount() end)
   popup:map("n", "<Esc>", function() popup:unmount() end)
@@ -118,6 +132,7 @@ function M.send_refs()
     })
 
     popup:mount()
+    track(popup)
 
     local lines = vim.split(text, "\n")
     vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)

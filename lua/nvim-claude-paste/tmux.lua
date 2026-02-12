@@ -1,5 +1,7 @@
 local M = {}
 
+local ui_dismiss -- set by ui.lua to avoid circular require
+
 local function capture_pane_preview(pane_id)
   local handle = io.popen(string.format("tmux capture-pane -t %s -p 2>/dev/null", pane_id))
   if not handle then return nil end
@@ -117,6 +119,7 @@ function M.ensure_claude_running()
 end
 
 function M.pick_pane(callback)
+  if ui_dismiss then ui_dismiss() end
   local panes = M.get_claude_panes()
   if #panes == 0 then
     M.ensure_claude_running()
@@ -177,6 +180,10 @@ function M.pick_pane(callback)
   })
 
   menu:mount()
+end
+
+function M._set_dismiss(fn)
+  ui_dismiss = fn
 end
 
 return M
